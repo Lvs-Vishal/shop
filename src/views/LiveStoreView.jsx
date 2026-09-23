@@ -1,10 +1,28 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { KpiCard, StatusIndicator } from '../components/Shared';
-import { Users, LogIn, LogOut, Clock, Activity, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Users, LogIn, LogOut, Clock, Activity, ShieldCheck, IndianRupee, Users2 } from 'lucide-react';
 
-const FloorPlan = () => {
+const HISTORY_LEN = 6;
+
+const FloorPlan = ({ viewMode }) => {
   const { data } = useAppContext();
+  // Keep a stable ref map: shopperid -> array of {x, y} positions (most recent last)
+  const historyRef = useRef({});
+
+  // Update history on every render (mirrors shopper positions)
+  data.shoppers.forEach(s => {
+    if (!historyRef.current[s.id]) {
+      historyRef.current[s.id] = [];
+    }
+    const hist = historyRef.current[s.id];
+    // Only push if position actually changed (or first render)
+    const last = hist[hist.length - 1];
+    if (!last || last.x !== s.x || last.y !== s.y) {
+      hist.push({ x: s.x, y: s.y });
+      if (hist.length > HISTORY_LEN) hist.shift();
+    }
+  });
   
   return (
     <div className="relative w-full h-[400px] bg-surface border border-border rounded-xl overflow-hidden mt-6">
@@ -30,6 +48,42 @@ const FloorPlan = () => {
         <rect x="85" y="10" width="10" height="80" fill="#1F2933" rx="1" />
         <text x="87" y="50" fill="#4B5563" fontSize="3" className="uppercase font-bold" transform="rotate(90 87,50)">Checkout</text>
       </svg>
+
+      {/* Trajectory trails (rendered before dots so dots appear on top) */}
+      {viewMode === 'trajectories' && data.shoppers.map(shopper => {
+        const hist = historyRef.current[shopper.id] || [];
+        return hist.slice(0, -1).map((pos, idx) => (
+          <div
+            key={`${shopper.id}-trail-${idx}`}
+            className="absolute rounded-full bg-cyan-accent transition-all duration-1000 ease-linear pointer-events-none"
+            style={{
+              left: `${pos.x}%`,
+              top: `${pos.y}%`,
+              width: '6px',
+              height: '6px',
+              transform: 'translate(-50%, -50%)',
+              opacity: (idx + 1) / hist.length * 0.45,
+            }}
+          />
+        ));
+      })}
+
+      {/* Heatmap glows */}
+      {viewMode === 'heatmap' && data.shoppers.map(shopper => (
+        <div
+          key={`glow-${shopper.id}`}
+          className="absolute pointer-events-none transition-all duration-1000 ease-linear"
+          style={{
+            left: `${shopper.x}%`,
+            top: `${shopper.y}%`,
+            width: '80px',
+            height: '80px',
+            transform: 'translate(-50%, -50%)',
+            background: 'radial-gradient(circle, rgba(34,211,238,0.25) 0%, rgba(34,211,238,0.08) 45%, transparent 70%)',
+            borderRadius: '50%',
+          }}
+        />
+      ))}
 
       {/* Shopper Dots */}
       {data.shoppers.map(shopper => (
@@ -85,14 +139,36 @@ const CameraTile = ({ id, name, status }) => (
 export const LiveStoreView = () => {
   const { data } = useAppContext();
   const { storeContext, edgeDevices } = data;
+  const [viewMode, setViewMode] = useState('dots');
+
+  const viewModes = [
+    { id: 'heatmap',      label: 'Heatmap' },
+    { id: 'trajectories', label: 'Trajectories' },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-4 gap-4">
-        <KpiCard title="People in Store" value={storeContext.peopleInStore} icon={Users} trend={4.2} highlight />
-        <KpiCard title="Entries Today" value={storeContext.entriesToday} icon={LogIn} trend={1.5} />
-        <KpiCard title="Exits Today" value={storeContext.exitsToday} icon={LogOut} />
-        <KpiCard title="Avg Dwell Time" value={storeContext.avgDwellTime} suffix="min" icon={Clock} trend={-2.1} />
+        <KpiCard title="People in Store"    value={storeContext.peopleInStore}    icon={Users}          trend={4.2}  highlight />
+        <KpiCard title="Entries Today"      value={storeContext.entriesToday}     icon={LogIn}          trend={1.5}  />
+        <KpiCard title="Exits Today"        value={storeContext.exitsToday}       icon={LogOut}                      />
+        <KpiCard title="Avg Dwell Time"     value={storeContext.avgDwellTime}     suffix="min"          icon={Clock} trend={-2.1} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <KpiCard
+          title="Revenue Recovered"
+          value={`₹${storeContext.revenueRecovered.toLocaleString()}`}
+          icon={IndianRupee}
+          trend={3.8}
+        />
+        <KpiCard
+          title="Longest Queue"
+          value={storeContext.longestQueue}
+          suffix="ppl"
+          icon={Users2}
+          trend={-1.2}
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-6">
@@ -100,11 +176,22 @@ export const LiveStoreView = () => {
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold text-white uppercase tracking-wide">Spatial Analytics</h2>
             <div className="flex gap-2">
-              <button className="px-3 py-1 bg-cyan-accent/20 text-cyan-accent border border-cyan-accent text-xs rounded font-medium">Heatmap</button>
-              <button className="px-3 py-1 bg-surface border border-border text-gray-400 text-xs rounded hover:text-white">Trajectories</button>
+              {viewModes.map(mode => (
+                <button
+                  key={mode.id}
+                  onClick={() => setViewMode(prev => prev === mode.id ? 'dots' : mode.id)}
+                  className={
+                    viewMode === mode.id
+                      ? 'px-3 py-1 bg-cyan-accent/20 text-cyan-accent border border-cyan-accent text-xs rounded font-medium'
+                      : 'px-3 py-1 bg-surface border border-border text-gray-400 text-xs rounded hover:text-white'
+                  }
+                >
+                  {mode.label}
+                </button>
+              ))}
             </div>
           </div>
-          <FloorPlan />
+          <FloorPlan viewMode={viewMode} />
         </div>
 
         <div className="flex flex-col gap-4">

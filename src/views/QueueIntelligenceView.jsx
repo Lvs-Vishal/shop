@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { ChartCard, StatusIndicator } from '../components/Shared';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { Clock, CheckCircle2, AlertTriangle, PlayCircle } from 'lucide-react';
+import { Clock, CheckCircle2, AlertTriangle, PlayCircle, PowerOff, Power } from 'lucide-react';
 
 const sparklineData = Array.from({ length: 60 }, (_, i) => ({
   time: i,
@@ -15,27 +15,40 @@ const forecastData = Array.from({ length: 30 }, (_, i) => ({
 }));
 
 export const QueueIntelligenceView = () => {
-  const { data } = useAppContext();
+  const { data, toggleCounterStatus } = useAppContext();
   const { queues } = data;
+  const [isAcknowledged, setIsAcknowledged] = useState(false);
 
   return (
     <div className="flex flex-col gap-6">
       
-      {/* AI Recommendation Banner */}
-      <div className="bg-gradient-to-r from-cyan-900/40 to-surface border border-cyan-accent/30 rounded-xl p-4 flex items-center justify-between shadow-[0_0_15px_rgba(34,211,238,0.1)]">
-        <div className="flex gap-4 items-center">
-          <div className="p-2 bg-cyan-accent/20 text-cyan-accent rounded-full animate-pulse">
-            <PlayCircle size={24} />
-          </div>
-          <div>
-            <h3 className="text-cyan-accent font-bold text-sm tracking-wide uppercase">AI Queue Action Recommended</h3>
-            <p className="text-gray-200 mt-1">Open Counter 3 in 6 mins to prevent 9-min wait times. Estimated retention value: <span className="font-mono font-bold text-cyan-accent">₹1,200</span></p>
-          </div>
+      {/* AI Recommendation Banner / Acknowledged Note */}
+      {isAcknowledged ? (
+        <div className="bg-cyan-accent/5 border border-cyan-accent/20 rounded-xl px-5 py-3 flex items-center gap-3">
+          <CheckCircle2 size={18} className="text-cyan-accent shrink-0" />
+          <span className="text-cyan-accent/80 text-sm font-medium">
+            Acknowledged by <span className="font-bold text-cyan-accent">Store Manager</span> — Counter 3 open action logged.
+          </span>
         </div>
-        <button className="bg-cyan-accent text-[#0B0F14] font-bold px-4 py-2 rounded flex items-center gap-2 hover:bg-cyan-400 transition-colors">
-          <CheckCircle2 size={16} /> Acknowledge
-        </button>
-      </div>
+      ) : (
+        <div className="bg-gradient-to-r from-cyan-900/40 to-surface border border-cyan-accent/30 rounded-xl p-4 flex items-center justify-between shadow-[0_0_15px_rgba(34,211,238,0.1)]">
+          <div className="flex gap-4 items-center">
+            <div className="p-2 bg-cyan-accent/20 text-cyan-accent rounded-full animate-pulse">
+              <PlayCircle size={24} />
+            </div>
+            <div>
+              <h3 className="text-cyan-accent font-bold text-sm tracking-wide uppercase">AI Queue Action Recommended</h3>
+              <p className="text-gray-200 mt-1">Open Counter 3 in 6 mins to prevent 9-min wait times. Estimated retention value: <span className="font-mono font-bold text-cyan-accent">₹1,200</span></p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsAcknowledged(true)}
+            className="bg-cyan-accent text-[#0B0F14] font-bold px-4 py-2 rounded flex items-center gap-2 hover:bg-cyan-400 transition-colors"
+          >
+            <CheckCircle2 size={16} /> Acknowledge
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-4 gap-4">
         {queues.map(q => (
@@ -65,6 +78,21 @@ export const QueueIntelligenceView = () => {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+
+            {/* Open / Close toggle */}
+            <button
+              onClick={() => toggleCounterStatus(q.id)}
+              className={`flex items-center justify-center gap-2 text-xs font-bold py-1.5 rounded border transition-colors ${
+                q.status === 'Open'
+                  ? 'border-status-critical/40 text-status-critical hover:bg-status-critical/10'
+                  : 'border-status-healthy/40 text-status-healthy hover:bg-status-healthy/10'
+              }`}
+            >
+              {q.status === 'Open'
+                ? <><PowerOff size={12} /> Close Counter</>
+                : <><Power size={12} /> Open Counter</>
+              }
+            </button>
           </div>
         ))}
       </div>

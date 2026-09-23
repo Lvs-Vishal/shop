@@ -9,6 +9,7 @@ import { ShelfHealthView } from './views/ShelfHealthView';
 import { QueueIntelligenceView } from './views/QueueIntelligenceView';
 import { EdgeNodesView } from './views/EdgeNodesView';
 import { PrivacyCenterView } from './views/PrivacyCenterView';
+import { AlertsView } from './views/AlertsView';
 
 const AppContent = () => {
   const [currentView, setCurrentView] = useState('live');
@@ -28,6 +29,8 @@ const AppContent = () => {
         return <EdgeNodesView />;
       case 'privacy':
         return <PrivacyCenterView />;
+      case 'alerts':
+        return <AlertsView />;
       default:
         return <LiveStoreView />;
     }

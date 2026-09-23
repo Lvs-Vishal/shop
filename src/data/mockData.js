@@ -85,5 +85,14 @@ export const initialMockData = {
     { sender: 'copilot', message: 'Based on edge analytics, **Produce B1 (Organic Bananas)** had the highest revenue at risk. It was out of stock for 14 hours total this week, resulting in an estimated ₹34,000 in lost revenue.' },
     { sender: 'user', message: 'When should I schedule extra staff?' },
     { sender: 'copilot', message: 'Queue intelligence predicts a surge between 17:00 and 19:00 today. I recommend opening Counter 3 at 16:45 to prevent wait times from exceeding the 5-minute threshold.' },
-  ]
+  ],
+
+  alerts: [
+    { id: 'ALT-001', type: 'stockout',  severity: 'critical', zone: 'Produce B1',  message: 'Organic Bananas out of stock for 2h 10m — estimated ₹12,500 revenue at risk.', assignee: null,        timestamp: '10:43', resolved: false },
+    { id: 'ALT-002', type: 'queue',     severity: 'critical', zone: 'Checkout',    message: 'Counter 4 wait time exceeded 8 min SLA threshold. Recommend opening Counter 3.', assignee: null,       timestamp: '10:50', resolved: false },
+    { id: 'ALT-003', type: 'shelf',     severity: 'warning',  zone: 'Dairy A2',   message: 'Almond Milk 1L at 10% fill — planogram compliance at risk.',                      assignee: 'Ravi K.',  timestamp: '10:31', resolved: false },
+    { id: 'ALT-004', type: 'assist',    severity: 'warning',  zone: 'Snacks C4',  message: 'Shopper dwell >90s without pickup detected. Possible assistance needed.',           assignee: null,       timestamp: '10:55', resolved: false },
+    { id: 'ALT-005', type: 'device',    severity: 'warning',  zone: 'Aisle 3',    message: 'NODE-2 NPU utilisation at 92% — risk of dropped frames. Consider task offload.',  assignee: 'Suresh T.', timestamp: '09:15', resolved: false },
+    { id: 'ALT-006', type: 'stockout',  severity: 'ok',       zone: 'Beverages',  message: 'Cola 2L restocked successfully. Revenue impact neutralised.',                       assignee: 'Priya M.', timestamp: '09:00', resolved: true  },
+  ],
 };

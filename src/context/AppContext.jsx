@@ -8,8 +8,36 @@ export const AppProvider = ({ children }) => {
   const [isLiveDemo, setIsLiveDemo] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   
+  // Store selector
+  const [selectedStore, setSelectedStore] = useState('042-BLR');
+
+  // Alerts state (lifted out of data so mutations don't trigger full data re-render)
+  const [alerts, setAlerts] = useState(initialMockData.alerts);
+
   // Buffer for offline events
   const [bufferedEvents, setBufferedEvents] = useState(0);
+
+  // Resolve an alert by id
+  const resolveAlert = (id) => {
+    setAlerts(prev => prev.map(a => a.id === id ? { ...a, resolved: true } : a));
+  };
+
+  // Assign a staff member to an alert
+  const assignAlert = (id, assignee) => {
+    setAlerts(prev => prev.map(a => a.id === id ? { ...a, assignee } : a));
+  };
+
+  // Toggle a counter's open/closed status
+  const toggleCounterStatus = (counterId) => {
+    setData(prev => ({
+      ...prev,
+      queues: prev.queues.map(q =>
+        q.id === counterId
+          ? { ...q, status: q.status === 'Open' ? 'Closed' : 'Open', length: q.status === 'Open' ? 0 : q.length || 1, waitTime: q.status === 'Open' ? 0 : q.waitTime || 1 }
+          : q
+      )
+    }));
+  };
 
   // Simulation effect
   useEffect(() => {
@@ -67,7 +95,13 @@ export const AppProvider = ({ children }) => {
       setIsLiveDemo, 
       isOffline, 
       setIsOffline,
-      bufferedEvents 
+      bufferedEvents,
+      selectedStore,
+      setSelectedStore,
+      alerts,
+      resolveAlert,
+      assignAlert,
+      toggleCounterStatus,
     }}>
       {children}
     </AppContext.Provider>

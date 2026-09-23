@@ -8,7 +8,7 @@ import {
   ShieldCheck, 
   MessageSquare,
   Bell,
-  Calendar,
+  BellRing,
   Wifi,
   WifiOff,
   Activity,
@@ -19,17 +19,27 @@ import { cn } from '../utils/cn';
 import { useAppContext } from '../context/AppContext';
 
 const NAV_ITEMS = [
-  { id: 'live', label: 'Live Store', icon: LayoutDashboard },
-  { id: 'shoppers', label: 'Shopper Analytics', icon: Users },
-  { id: 'inventory', label: 'Shelf Health', icon: Package },
-  { id: 'queue', label: 'Queue Intel', icon: Clock },
-  { id: 'edge', label: 'Edge Nodes', icon: Cpu },
-  { id: 'privacy', label: 'Privacy Center', icon: ShieldCheck },
+  { id: 'live',      label: 'Live Store',         icon: LayoutDashboard },
+  { id: 'shoppers',  label: 'Shopper Analytics',  icon: Users },
+  { id: 'inventory', label: 'Shelf Health',        icon: Package },
+  { id: 'queue',     label: 'Queue Intel',         icon: Clock },
+  { id: 'edge',      label: 'Edge Nodes',          icon: Cpu },
+  { id: 'privacy',   label: 'Privacy Center',      icon: ShieldCheck },
+  { id: 'alerts',    label: 'Alerts',              icon: BellRing },
+];
+
+const STORE_OPTIONS = [
+  { value: '042-BLR', label: 'Store 042 – Bangalore' },
+  { value: '011-MUM', label: 'Store 011 – Mumbai' },
+  { value: '055-DEL', label: 'Store 055 – Delhi' },
+  { value: '078-HYD', label: 'Store 078 – Hyderabad' },
 ];
 
 export const Layout = ({ children, currentView, setCurrentView, isCopilotOpen, setIsCopilotOpen }) => {
-  const { isLiveDemo, setIsLiveDemo, isOffline, setIsOffline, bufferedEvents } = useAppContext();
+  const { isLiveDemo, setIsLiveDemo, isOffline, setIsOffline, bufferedEvents, selectedStore, setSelectedStore, alerts } = useAppContext();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const unresolvedCount = alerts.filter(a => !a.resolved).length;
 
   return (
     <div className="min-h-screen bg-background flex overflow-hidden text-sm">
@@ -54,12 +64,21 @@ export const Layout = ({ children, currentView, setCurrentView, isCopilotOpen, s
                 key={item.id}
                 onClick={() => setCurrentView(item.id)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors w-full text-left",
+                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors w-full text-left relative",
                   isActive ? "bg-cyan-accent/10 text-cyan-accent" : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
                 )}
               >
                 <Icon size={18} />
                 {isSidebarOpen && <span className="font-medium">{item.label}</span>}
+                {/* Badge on alerts nav item */}
+                {item.id === 'alerts' && unresolvedCount > 0 && (
+                  <span className={cn(
+                    "ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-status-critical text-white tabular-nums",
+                    !isSidebarOpen && "absolute -top-1 -right-1 ml-0"
+                  )}>
+                    {unresolvedCount}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -71,13 +90,19 @@ export const Layout = ({ children, currentView, setCurrentView, isCopilotOpen, s
         {/* TopBar */}
         <header className="h-14 bg-surface border-b border-border flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-background px-3 py-1.5 rounded border border-border cursor-pointer">
-              <span className="font-medium text-gray-200">Store 042 - Bangalore</span>
-              <ChevronDown size={14} className="text-gray-500"/>
-            </div>
-            <div className="flex items-center gap-2 bg-background px-3 py-1.5 rounded border border-border cursor-pointer text-gray-300">
-              <Calendar size={14} />
-              <span>Today</span>
+            {/* Store Selector — real native select */}
+            <div className="relative flex items-center">
+              <select
+                id="store-selector"
+                value={selectedStore}
+                onChange={(e) => setSelectedStore(e.target.value)}
+                className="appearance-none bg-background text-gray-200 font-medium pl-3 pr-8 py-1.5 rounded border border-border cursor-pointer focus:outline-none focus:border-cyan-accent/50 text-sm"
+              >
+                {STORE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="absolute right-2 text-gray-500 pointer-events-none" />
             </div>
           </div>
 
@@ -111,10 +136,20 @@ export const Layout = ({ children, currentView, setCurrentView, isCopilotOpen, s
               </label>
             </div>
 
-            <div className="relative cursor-pointer text-gray-400 hover:text-white">
+            {/* Bell icon with unresolved alert count badge */}
+            <button
+              id="bell-icon"
+              onClick={() => setCurrentView('alerts')}
+              className="relative text-gray-400 hover:text-white transition-colors"
+              aria-label={`Alerts — ${unresolvedCount} unresolved`}
+            >
               <Bell size={20} />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-status-critical rounded-full animate-pulse"></span>
-            </div>
+              {unresolvedCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-status-critical text-white text-[10px] font-bold rounded-full px-1 tabular-nums animate-pulse">
+                  {unresolvedCount}
+                </span>
+              )}
+            </button>
             
             <button 
               onClick={() => setIsCopilotOpen(!isCopilotOpen)}
