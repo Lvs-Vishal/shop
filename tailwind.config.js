@@ -7,16 +7,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "#0B0F14",
-        surface: "#141A21",
-        border: "#1F2933",
-        cyan: {
-          accent: "#22D3EE"
+        background: "#0F1117",
+        surface: "#161B26",
+        "surface-light": "#222840",
+        border: "#252B3B",
+        indigo: {
+          accent: "#6366F1"
         },
         status: {
-          healthy: "#10B981", // Emerald
-          warning: "#F59E0B", // Amber
-          critical: "#F43F5E", // Rose
+          healthy: "#10B981",
+          warning: "#F59E0B",
+          critical: "#F43F5E",
         }
       },
       fontFamily: {

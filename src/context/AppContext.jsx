@@ -7,101 +7,104 @@ export const AppProvider = ({ children }) => {
   const [data, setData] = useState(initialMockData);
   const [isLiveDemo, setIsLiveDemo] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
-  
+
   // Store selector
   const [selectedStore, setSelectedStore] = useState('042-BLR');
 
-  // Alerts state (lifted out of data so mutations don't trigger full data re-render)
+  // Alerts (lifted out so mutations don't re-render the full data tree)
   const [alerts, setAlerts] = useState(initialMockData.alerts);
 
   // Buffer for offline events
   const [bufferedEvents, setBufferedEvents] = useState(0);
 
-  // Resolve an alert by id
+  // ── Theme ─────────────────────────────────────────────────────
+  const [theme, setThemeState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('rs-theme') || 'dark';
+    }
+    return 'dark';
+  });
+
+  const setTheme = (t) => {
+    setThemeState(t);
+    localStorage.setItem('rs-theme', t);
+  };
+
+  // ── Alert mutations ───────────────────────────────────────────
   const resolveAlert = (id) => {
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, resolved: true } : a));
   };
 
-  // Assign a staff member to an alert
   const assignAlert = (id, assignee) => {
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, assignee } : a));
   };
 
-  // Toggle a counter's open/closed status
+  // ── Counter toggle ────────────────────────────────────────────
   const toggleCounterStatus = (counterId) => {
     setData(prev => ({
       ...prev,
       queues: prev.queues.map(q =>
         q.id === counterId
-          ? { ...q, status: q.status === 'Open' ? 'Closed' : 'Open', length: q.status === 'Open' ? 0 : q.length || 1, waitTime: q.status === 'Open' ? 0 : q.waitTime || 1 }
+          ? {
+              ...q,
+              status: q.status === 'Open' ? 'Closed' : 'Open',
+              length:   q.status === 'Open' ? 0 : q.length   || 1,
+              waitTime: q.status === 'Open' ? 0 : q.waitTime  || 1,
+            }
           : q
       )
     }));
   };
 
-  // Simulation effect
+  // ── Live simulation ───────────────────────────────────────────
   useEffect(() => {
     if (!isLiveDemo) return;
-
     const intervalId = setInterval(() => {
-      setData((prev) => {
-        // If offline, we buffer events and don't update main metrics heavily,
-        // just increase buffer count. In a real app, Edge device caches locally.
+      setData(prev => {
         if (isOffline) {
           setBufferedEvents(b => b + 1);
-          return prev; // Keep data frozen to simulate offline UI
+          return prev;
         }
-        
-        // Mutate shoppers slightly to simulate movement
-        const newShoppers = prev.shoppers.map(s => ({
-          ...s,
-          x: Math.max(0, Math.min(100, s.x + (Math.random() - 0.5) * 5)),
-          y: Math.max(0, Math.min(100, s.y + (Math.random() - 0.5) * 5))
-        }));
-
-        // Mutate counters slightly
         return {
           ...prev,
-          shoppers: newShoppers,
+          shoppers: prev.shoppers.map(s => ({
+            ...s,
+            x: Math.max(0, Math.min(100, s.x + (Math.random() - 0.5) * 5)),
+            y: Math.max(0, Math.min(100, s.y + (Math.random() - 0.5) * 5)),
+          })),
           storeContext: {
             ...prev.storeContext,
-            peopleInStore: prev.storeContext.peopleInStore + Math.floor(Math.random() * 3) - 1,
-            revenueRecovered: prev.storeContext.revenueRecovered + Math.floor(Math.random() * 50)
+            peopleInStore:    prev.storeContext.peopleInStore + Math.floor(Math.random() * 3) - 1,
+            revenueRecovered: prev.storeContext.revenueRecovered + Math.floor(Math.random() * 50),
           },
-          queues: prev.queues.map(q => 
-            q.status === 'Open' ? { ...q, length: Math.max(0, q.length + Math.floor(Math.random() * 3) - 1) } : q
-          )
+          queues: prev.queues.map(q =>
+            q.status === 'Open'
+              ? { ...q, length: Math.max(0, q.length + Math.floor(Math.random() * 3) - 1) }
+              : q
+          ),
         };
       });
     }, 2000);
-
     return () => clearInterval(intervalId);
   }, [isLiveDemo, isOffline]);
 
-  // When coming back online, flush buffer
+  // ── Offline flush ─────────────────────────────────────────────
   useEffect(() => {
     if (!isOffline && bufferedEvents > 0) {
-      // Flush animation simulation
-      setTimeout(() => {
-        setBufferedEvents(0);
-      }, 1000);
+      setTimeout(() => setBufferedEvents(0), 1000);
     }
   }, [isOffline, bufferedEvents]);
 
   return (
-    <AppContext.Provider value={{ 
-      data, 
-      isLiveDemo, 
-      setIsLiveDemo, 
-      isOffline, 
-      setIsOffline,
+    <AppContext.Provider value={{
+      data,
+      isLiveDemo, setIsLiveDemo,
+      isOffline,  setIsOffline,
       bufferedEvents,
-      selectedStore,
-      setSelectedStore,
-      alerts,
-      resolveAlert,
-      assignAlert,
+      selectedStore, setSelectedStore,
+      alerts, resolveAlert, assignAlert,
       toggleCounterStatus,
+      theme, setTheme,
     }}>
       {children}
     </AppContext.Provider>
