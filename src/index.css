@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0B0F14;
+  --color-surface: #141A21;
+  --color-surface-light: #1F2933;
+  --color-border: #1F2933;
+  --color-cyan-accent: #22D3EE;
+  
+  --color-status-healthy: #10B981;
+  --color-status-warning: #F59E0B;
+  --color-status-critical: #F43F5E;
+
+  --font-sans: 'Inter', 'Geist', sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: white;
+    font-family: var(--font-sans);
+    margin: 0;
+  }
+}
+
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
